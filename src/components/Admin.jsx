@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Upload, FileText, Eye, EyeOff, Download, Trash2, LogOut, Shield, Lock, Mail } from 'lucide-react'
 import axios from 'axios'
 
-const API_URL = 'http://localhost:5000/api'
+const API_URL = 'https://periyapavadibackend.vercel.app/api'
 
 function Admin({ setIsAuthenticated, isAuthenticated }) {
   const navigate = useNavigate()
