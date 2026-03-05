@@ -34,18 +34,58 @@ function Fileshowup() {
     setViewingDoc(null)
   }
 
-  const handleDownload = (doc) => {
+  const handleDownload = async (doc) => {
     const url = doc.secureUrl || doc.cloudinaryUrl
-    if (url) {
+    if (!url) {
+      alert('Document URL not available')
+      return
+    }
+
+    try {
+      // Fetch the file as a blob to bypass cross-origin download restrictions
+      const response = await fetch(url)
+      const blob = await response.blob()
+
+      // Ensure the filename has the correct extension
+      let fileName = doc.originalName || doc.title || 'document'
+      
+      // If the filename doesn't have an extension, add one based on mimeType
+      if (!fileName.includes('.')) {
+        const mimeToExt = {
+          'application/pdf': '.pdf',
+          'application/msword': '.doc',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+          'image/jpeg': '.jpg',
+          'image/png': '.png',
+          'image/gif': '.gif',
+          'image/webp': '.webp',
+          'application/vnd.ms-excel': '.xls',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+        }
+        const ext = mimeToExt[doc.mimeType] || '.pdf'
+        fileName = fileName + ext
+      }
+
+      // For PDF files, ensure it ends with .pdf
+      if (doc.mimeType === 'application/pdf' && !fileName.toLowerCase().endsWith('.pdf')) {
+        fileName = fileName + '.pdf'
+      }
+
+      // Create a blob URL and trigger download
+      const blobUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
-      link.href = url
-      link.download = doc.originalName
-      link.target = '_blank'
+      link.href = blobUrl
+      link.download = fileName
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
-    } else {
-      alert('Document URL not available')
+      
+      // Clean up the blob URL
+      window.URL.revokeObjectURL(blobUrl)
+    } catch (error) {
+      console.error('Download error:', error)
+      // Fallback: open in new tab
+      window.open(url, '_blank')
     }
   }
 
@@ -198,16 +238,13 @@ function Fileshowup() {
               <div className="flex gap-3">
                 {/* Only show download if isDownloadable is true */}
                 {viewingDoc.isDownloadable && (
-                  <a
-                    href={viewingDoc.secureUrl || viewingDoc.cloudinaryUrl}
-                    download={viewingDoc.originalName}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() => handleDownload(viewingDoc)}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all flex items-center gap-2"
                   >
                     <Download className="w-5 h-5" />
                     Download
-                  </a>
+                  </button>
                 )}
                 <button
                   onClick={closeViewer}
